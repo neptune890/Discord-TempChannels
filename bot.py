@@ -28,6 +28,34 @@ class DiscordBot(commands.Bot):
         except Exception as e:
             print(e)
 
+        # Check for empty voice channels on bot load in the static guild
+        print("Checking for empty voice channels on startup...")
+        target_guild = self.get_guild(guildId.id)
+        if target_guild:
+            target_category = target_guild.get_channel(categoryId)
+            if isinstance(target_category, discord.CategoryChannel):
+                for voice_channel in target_category.voice_channels:
+                    # Skip the permanent channel
+                    if voice_channel.id == permanentVoiceChannelId:
+                        print(f"Skipping permanent channel '{voice_channel.name}' from startup deletion check.")
+                        continue
+
+                    if len(voice_channel.members) == 0:
+                        try:
+                            print(
+                                f"Deleting empty voice channel '{voice_channel.name}' (ID: {voice_channel.id}) on startup.")
+                            await voice_channel.delete()
+                        except discord.Forbidden:
+                            print(f"Missing permissions to delete channel '{voice_channel.name}' on startup.")
+                        except Exception as e:
+                            print(f"Error deleting channel '{voice_channel.name}' on startup: {e}")
+            else:
+                print(
+                    f"Warning: Configured CATEGORY_ID {categoryId} is not a valid category channel in guild {guildId} on startup.")
+        else:
+            print(
+                f"Warning: Guild with ID {guildId} not found on startup. Cannot check voice channels for cleanup.")
+
     async def on_voice_state_update(self, member, before, after):
         # We only care if a member left a channel
         # or moved from one channel to another
