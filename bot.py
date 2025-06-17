@@ -75,6 +75,22 @@ class DiscordBot(commands.Bot):
                         print(f"Missing permissions to delete channel: {before.channel.name}")
                     except Exception as e:
                         print(f"Error deleting channel {before.channel.name}: {e}")
+        # Check if they entered the permanent voice channel, create channel and move them...
+        if after.channel.id == permanentVoiceChannelId:
+            print(f"Entered permanent voice channel: {after.channel.name}")
+            #Define the guild
+            guild = self.get_guild(guildId.id)
+            # Check if the user is in a voice channel
+            user_voice_state = member.voice
+
+            # Create the voice channel within the specified category
+            category = guild.get_channel(categoryId)
+            channel_name = f"{member.display_name}'s Channel"
+            voice_channel = await guild.create_voice_channel(channel_name, category=category)
+
+            # Move the user to the newly created voice channel
+            await member.edit(voice_channel=voice_channel)
+
 
 bot = DiscordBot(command_prefix="!",intents=intents)
 @bot.tree.command(name="create-voice",description="Creates temp voice channel", guild=guildId)
